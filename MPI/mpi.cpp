@@ -1,10 +1,9 @@
 #include <iostream>
 #include "mpi.h"
-#include <chrono>
 
 using namespace std;
 
-// Параллельное вычисление числа π, используя ряд Эйлера
+// Последовательное вычисление числа π, используя ряд Эйлера
 double euler(int n)
 {
     double result = 0;
@@ -19,6 +18,7 @@ double euler(int n)
     return result;
 }
 
+// Распределенное вычисление числа π, используя ряд Эйлера
 void mpi_euler(int n, int size, int rank)
 {
     int recieve[] = { 0 };
@@ -75,7 +75,34 @@ void mpi_euler(int n, int size, int rank)
         double end = MPI_Wtime();
         double time = end - begin;
         cout << endl;
-        cout << "Программа посчитала число p = " << result << "; time = " << time << endl;
+        cout << "Распределенное вычисление дало результат p = " << result << "; time = " << time << "sec; n = " << n << endl;
+    }
+}
+
+void tests(int* n, int code, int size = 0, int rank = 0)
+{
+    if (code == 1)
+    {
+        cout << endl;
+        cout << "Последовательный метод вычисления:" << endl;
+        for (int i = 0; i < 6; i++)
+        {
+            clock_t start = clock();
+
+            double result = euler(n[i]);
+
+            clock_t end = clock();
+            double sec = (double)(end - start) / CLOCKS_PER_SEC;
+            cout << "Последовательное вычисление дало результат p = " << result << "; time = " << sec << "sec; n = " << n[i];
+        }
+        cout << endl;
+    }
+    else if (code == 0)
+    {
+        for (int i = 0; i < 6; i++)
+        {
+            mpi_euler(n[i], size, rank);
+        }
     }
 }
 
@@ -84,7 +111,8 @@ int main(int* argc, char** argv)
     setlocale(LC_CTYPE, "rus");
 
     int size, rank;
-    int n = 100000000;
+    int n[] = {10000, 100000, 1000000, 10000000, 100000000, 1000000000};
+    char in = 'Y';
 
     MPI_Init(argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -100,22 +128,28 @@ int main(int* argc, char** argv)
     }
     if (size == 1)
     {
-        cout << endl;
-        cout << "Последовательный метод вычисления:" << endl;
-        cout << "n = " << n << endl;
-        clock_t start = clock();
-
-        double result = euler(n);
-
-        clock_t end = clock();
-        double sec = (double)(end - start) / CLOCKS_PER_SEC;
-        cout << "Последовательное вычисление дало результат p = " << result << "; time = " << sec << endl;
-        cout << endl;
+        cout << "Начать работу программы? Y/N: ";
+        cin >> in;
+        if (in == 'Y')
+            tests(n, 1);
+        else
+            cout << "Ошибка" << endl;
     }
 
     if (size > 1)
     {
-        mpi_euler(n, size, rank);
+        if (rank == 0)
+        {
+            cout << "Начать работу программы? Y/N: ";
+            cin >> in;
+        }
+        if (in == 'Y')
+        {
+            tests(n, 0, size, rank);
+        }
+        else
+            if (rank == 0)
+                cout << "Ошибка" << endl;
     }
 
     MPI_Finalize();
