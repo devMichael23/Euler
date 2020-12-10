@@ -40,7 +40,6 @@ void mpi_euler(int n, int size, int rank)
         {
             local_sum += 1 / (pow(i + 1, 2));
         }
-        //cout << "Главный процесс вывел сумму = " << local_sum << endl;
     }
     if (rank > 0 && rank != size - 1)
     {
@@ -48,12 +47,10 @@ void mpi_euler(int n, int size, int rank)
         start = recieve[0];
         stop = start + count;
         // Включая start, не включая stop
-        //cout << "Процесс " << rank << " получил start = " << start << " и stop = " << stop << endl;
         for (int i = start; i < stop; i++)
         {
             local_sum += 1 / (pow(i + 1, 2));
         }
-        //cout << "Процесс " << rank << " вывел сумму = " << local_sum << endl;
     }
     if (rank == size - 1)
     {
@@ -61,12 +58,10 @@ void mpi_euler(int n, int size, int rank)
         start = recieve[0];
         stop = n;
         // Включая start, не включая stop
-        //cout << "Последний процесс " << rank << " получил start = " << start << " и stop = " << stop << endl;
         for (int i = start; i < stop; i++)
         {
             local_sum += 1 / (pow(i + 1, 2));
         }
-        //cout << "Последний процесс " << rank << " вывел сумму = " << local_sum << endl;
     }
     MPI_Reduce(&local_sum, &global_sum, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (rank == 0)
